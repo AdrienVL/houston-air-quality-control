@@ -1,70 +1,110 @@
 import React, { useRef, useEffect, useState } from 'react';
-import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import mapboxgl from 'mapbox-gl';
+import './Map.css';
 import airquality from './air-quality.png';
 
 
 const API_KEY = process.env.REACT_APP_MAPBOX_API_KEY
 mapboxgl.accessToken = API_KEY
+const Map = () => {
+  const mapContainerRef = useRef(null);
 
+  var obj;
 
-// mapboxgl.accessToken = "pk.eyJ1IjoiYWRyaWVuLWxoZW1hbm4iLCJhIjoiY2t6b213ZTJwMnA0dzJ1cXJyNG0yMHdlbCJ9.kmta6IkpT9B7-4JWX6Lleg"
-
-function App() {
-
-
-// const [ setLocationsList ] = useState([]);
-// const [ setLoading ] = useState(false);
-
-  
-  const mapContainer = useRef(null);
-  const map = useRef(null);
   const [lng, setLng] = useState(-111.9);
   const [lat, setLat] = useState(40.7);
-  const [zoom, setZoom] = useState(9);
-
-  useEffect(() => {
-    if (map.current) return; // initialize map only once
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v11',
-      center: [lng, lat],
-      zoom: zoom
-    });
-  });
-
-  useEffect(() => {
-    if (!map.current) return; // wait for map to initialize
-    map.current.on('move', () => {
-      setLng(map.current.getCenter().lng.toFixed(4));
-      setLat(map.current.getCenter().lat.toFixed(4));
-      setZoom(map.current.getZoom().toFixed(2));
-    });
-  });
+  const [zoom, setZoom] = useState(10);
 
   const getLocationsList = () => {
-    // setLoading(true);
-    fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/locations')
+    fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/locations?' + new URLSearchParams({
+      country_id: 'US',
+      city: 'Salt Lake City',
+      limit: '5'
+    }))
       .then(res => res.json())
-      .then(res => {
-        // setLocationsList(res.data);
-        console.log(res)
-        // setLoading(false);
-      });
-  }
+      .then(data => obj = data)
+      .then(() => console.log(obj)
+
+    
+      )
+  } 
+
+ 
 
 
+  // Initialize map when component mounts
+  useEffect(() => {
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [lng, lat],
+      zoom: zoom,
+    });
+
+    var lngLats = [];
+    const getLocationsList2 = () => {
+      fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/locations?' + new URLSearchParams({
+        country_id: 'US',
+        city: 'Salt Lake City',
+        limit: '5'
+      }))
+        .then(res => res.json())
+        .then(data => obj = data)
+        .then(() => {
+          
+
+          obj.results.map((id) => {
+
+
+            lngLats.push(id.coordinates.longitude)
+            lngLats.push(id.coordinates.latitude)
+
+            console.log(lngLats)
+            new mapboxgl.Marker().setLngLat(lngLats).addTo(map)   
+            
+            lngLats = []
+
+          })
+
+
+
+        }
+        
+      
+        );
+    } 
+
+  
+    getLocationsList2()
+  
+
+    // Add navigation control (the +/- zoom buttons)
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    map.on('move', () => {
+      setLng(map.getCenter().lng.toFixed(4));
+      setLat(map.getCenter().lat.toFixed(4));
+      setZoom(map.getZoom().toFixed(2));
+    });
+
+    // Clean up on unmount
+    return () => map.remove();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
-      <img className="air-quality-image" src={airquality} alt="" />
-      <h1 className="title">Salt Lake City Air Quality Control</h1>
-      <hr className="rounded"></hr>
-      <div className="sidebar">
-        Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
+      <div className="sidebarStyle">
+        <img className="air-quality-image" src={airquality} alt="" />
+        <h1 className="title">Salt Lake City Air Quality Control</h1>
+        <hr className="rounded"></hr>
+        <div>
+          Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
+        </div>
       </div>
-      <div ref={mapContainer} className="map-container" />
+      <div className="map-container" ref={mapContainerRef} />
       <div ref = {getLocationsList}></div>
     </div>
   );
-}
-export default App;
+};
+
+export default Map;
