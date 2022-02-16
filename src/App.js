@@ -3,7 +3,11 @@ import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-load
 import airquality from './air-quality.png';
 
 
-mapboxgl.accessToken = 'pk.eyJ1IjoiYWRyaWVuLWxoZW1hbm4iLCJhIjoiY2t6b213ZTJwMnA0dzJ1cXJyNG0yMHdlbCJ9.kmta6IkpT9B7-4JWX6Lleg';
+const API_KEY = process.env.REACT_APP_MAPBOX_API_KEY
+mapboxgl.accessToken = API_KEY
+
+
+// mapboxgl.accessToken = "pk.eyJ1IjoiYWRyaWVuLWxoZW1hbm4iLCJhIjoiY2t6b213ZTJwMnA0dzJ1cXJyNG0yMHdlbCJ9.kmta6IkpT9B7-4JWX6Lleg"
 
 function App() {
 
