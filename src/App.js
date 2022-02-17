@@ -23,7 +23,7 @@ const App = () => {
 
 
   // Initialize map when component mounts
-  useEffect(() => {
+  useEffect(() => { 
 
     console.log("Inside effect")
     const map = new mapboxgl.Map({
@@ -39,7 +39,7 @@ const App = () => {
 
       console.log("value.value", value.value)
 
-      if (value.value == 'All Locations' || typeof value.value == 'undefined') {
+      if (value.value === 'All Locations' || typeof value.value === 'undefined') {
 
         console.log("All locations")
 
@@ -83,14 +83,31 @@ const App = () => {
 
             let marker = new mapboxgl.Marker().setLngLat(lngLats).addTo(map)  
 
-            var popup = new mapboxgl.Popup(
-              {offset:[28, 0]}
-            ).setText("Location Type: " + id.entity + ". Name: " + id.name + ". Source: " + id.sources[0].id + ". Count : " + id.parameters[0].count + ". Unit: " + id.parameters[0].unit
+            // var popup = new mapboxgl.Popup(
+            //   {offset:[28, 0]}
+            // ).setText("Location Type: " + id.entity + ". Name: " + id.name + ". Source: " + id.sources[0].id + ". Count : " + id.parameters[0].count + ". Unit: " + id.parameters[0].unit
 
-            );
+            // );
+
+            // // add popup to marker
+            // marker.setPopup(popup);
+
+            var popup = new mapboxgl.Popup(
+              {
+              closeButton: false,
+            closeonClick: false}
+            ).setText("Location Type: " + id.entity + ". Name: " + id.name + ". Source: " + id.sources[0].id + ". Count : " + id.parameters[0].count + ". Unit: " + id.parameters[0].unit );
+
 
             // add popup to marker
             marker.setPopup(popup);
+
+
+            
+            const markerDiv = marker.getElement();
+            
+            markerDiv.addEventListener('mouseenter', () => marker.togglePopup());
+            markerDiv.addEventListener('mouseleave', () => marker.togglePopup());
                      
 
             lngLats = []
@@ -107,9 +124,12 @@ const App = () => {
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     map.on('move', () => {
+
+      console.log("moving")
       setLng(map.getCenter().lng.toFixed(4));
       setLat(map.getCenter().lat.toFixed(4));
       setZoom(map.getZoom().toFixed(2));
+
     });
 
 
