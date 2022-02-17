@@ -15,6 +15,7 @@ const App = () => {
   var obj;
   var locationType;
   var apiParameters = {};
+  var locationColor
 
   const [newValue, setNewValue] = useState("")
   const [lng, setLng] = useState(-95.3);
@@ -46,7 +47,7 @@ const App = () => {
         apiParameters = {
         country_id: 'US',
         city: 'Houston',
-        limit: '30'}
+        limit: '200'}
   
       } else{
   
@@ -56,7 +57,7 @@ const App = () => {
         apiParameters = {
           country_id: 'US',
           city: 'Houston',
-          limit: '30',
+          limit: '200',
           entity: locationType
         }
       }
@@ -81,7 +82,15 @@ const App = () => {
               lngLats.push(id.coordinates.latitude)
             }
 
-            let marker = new mapboxgl.Marker().setLngLat(lngLats).addTo(map)  
+            if (id.entity === 'government'){
+              locationColor = 'red'
+            } else if (id.entity === 'research'){
+              locationColor = 'green'
+            } else{
+              locationColor = 'blue'
+            }
+
+            let marker = new mapboxgl.Marker({color: locationColor}).setLngLat(lngLats).addTo(map)  
 
             // var popup = new mapboxgl.Popup(
             //   {offset:[28, 0]}
@@ -96,11 +105,12 @@ const App = () => {
               {
               closeButton: false,
             closeonClick: false}
-            ).setText("Location Type: " + id.entity + ". Name: " + id.name + ". Source: " + id.sources[0].id + ". Count : " + id.parameters[0].count + ". Unit: " + id.parameters[0].unit );
-
+            // ).setText("Location Type: " + id.entity + ". Name: " + id.name + ". Source: " + id.sources[0].id + ". Count : " + id.parameters[0].count + ". Unit: " + id.parameters[0].unit );
+            ).setHTML('<h3>Location Type: ' + id.entity + '</h3>' + '<h4>Name: ' + id.name + '</h4>' + '</h3>' + '<h4>Source: ' + id.sources[0].id + '</h4>' + '</h3>' + '<h4>Count: ' + id.parameters[0].count + ' ' + id.parameters[0].unit + '</h4>' + '</h3>' + '<h4>Display Name: ' + id.parameters[0].displayName + '</h4>')
 
             // add popup to marker
             marker.setPopup(popup);
+
 
 
             
@@ -148,7 +158,6 @@ const App = () => {
         </div>
       </div>
       <div className="map-container" ref={mapContainerRef} />
-      {/* <div ref = {getLocationsList}></div> */}
       <div className="dropdown">
         <Dropdown
           placeholder="All Locations"
