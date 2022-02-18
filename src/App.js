@@ -5,20 +5,22 @@ import mapboxgl from 'mapbox-gl';
 import airquality from './air-quality.png';
 import 'reactjs-popup/dist/index.css';
 import Popup from './components/popups';
-import {  LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Legend, Bar} from 'recharts';
+import {  LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Legend, Bar} from 'recharts';
 
 
-const API_KEY = process.env.REACT_APP_MAPBOX_API_KEY
-mapboxgl.accessToken = API_KEY
+mapboxgl.accessToken = "pk.eyJ1IjoiYWRyaWVuLWxoZW1hbm4iLCJhIjoiY2t6b213ZTJwMnA0dzJ1cXJyNG0yMHdlbCJ9.kmta6IkpT9B7-4JWX6Lleg"
 
 const App = () => {
 
+  
+  const mapContainerRef = useRef(null);
+
+  //State Definitions
   const [entity, setEntity] = useState("")
   const [name, setName] = useState("")
   const [source, setSource] = useState("")
   const [count, setCount] = useState("")
   const [displayName, setDisplayName] = useState("")
-  const mapContainerRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [newValue, setNewValue] = useState("")
   const [lng, setLng] = useState(-95.3);
@@ -34,7 +36,6 @@ const App = () => {
     var apiParameters = {};
     var locationColor
   
-
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/streets-v11',
@@ -44,12 +45,12 @@ const App = () => {
 
 
     var lngLats = [];
+
+    //When Location type gets changes, getLocationList gets called
     const getLocationsList = (value) => {
 
-
+      //handling location type
       if (value.value === 'All Locations' || typeof value.value === 'undefined') {
-
-
         apiParameters = {
         country_id: 'US',
         city: 'Houston',
@@ -69,14 +70,17 @@ const App = () => {
       }
 
 
+      //Getting all locations for set parameters
       fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/locations?' + new URLSearchParams(apiParameters))
         .then(res => res.json())
         .then(data => obj = data)
         .then(() => {
           
 
+          //Iterate over each location
           obj.results.map((id) => {
 
+            //Handling differences in JSON obj coordinate field definitions
             if (typeof id.coordinates == 'undefined'){
               lngLats.push(id.bounds[0]) //longitdue
               lngLats.push(id.bounds[1]) //latitude
@@ -85,6 +89,7 @@ const App = () => {
               lngLats.push(id.coordinates.latitude)
             }
 
+            //Assign marker color by location type
             if (id.entity === 'government'){
               locationColor = 'red'
             } else if (id.entity === 'research'){
@@ -93,9 +98,11 @@ const App = () => {
               locationColor = 'blue'
             }
 
+            //Define Marker on map for each location
             let marker = new mapboxgl.Marker({color: locationColor}).setLngLat(lngLats).addTo(map)  
 
 
+            //Associate location data to marker popup
             var popup = new mapboxgl.Popup(
               {
               closeButton: false,
@@ -105,18 +112,20 @@ const App = () => {
             // add popup to marker
             marker.setPopup(popup);
 
-      
             const markerDiv = marker.getElement();
 
 
-            lngLats = []
 
-
-            //MARKER UNIQUE IDENTIFIER IS LONG AND LAT -> Therefore I need 
+           //Marker Event Listeners - Hovering for popups
             markerDiv.addEventListener('mouseenter', () => marker.togglePopup());
             markerDiv.addEventListener('mouseleave', () => marker.togglePopup());
+            //Click on markers ]fetches location and measurements (using coordinates as unique identifier)
             markerDiv.addEventListener('click', () => getLocationByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
             markerDiv.addEventListener('click', () => getMeasurementsByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
+
+            //reset - for mapping
+            lngLats = []
+
 
             
           })
@@ -145,48 +154,34 @@ const App = () => {
 
   const getMeasurementsByCoordinates = (coordinates) => {
 
-
     var apiParameters
     var obj
     var measurements = []
-
 
     apiParameters = {
       coordinates: coordinates
     }
 
+
+    //Fetch measurements from same air quality source coordinates
     fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/measurements?' + new URLSearchParams(apiParameters))
       .then(res => res.json())
       .then(data => obj = data)
       .then(() => {
 
-        console.log("MEASUREMENT PRINTING:", obj.results)
-
-        obj.results.map((i) =>{
-
-
-
-          measurements.unshift({name: i.date.utc.slice(0,10), value: i.value})
-        })
-
-        console.log(measurements)
-
+        obj.results.map((i) =>{measurements.unshift({name: i.date.utc.slice(0,10), value: i.value})})
+        //Set measurements for graphs
         setMeasurementsState(measurements);
-
-
-        setIsOpen(!isOpen);
-
-        
-      })
+        //Handles popup
+         setIsOpen(!isOpen);})
   }
 
 
+  //Save parent location data for location and measurement popup display
   const getLocationByCoordinates = (coordinates) => {
 
     var apiParameters;
     var obj;
-
-    console.log("Coordinates,", coordinates)
 
     apiParameters = {
       coordinates: coordinates,
@@ -197,7 +192,6 @@ const App = () => {
       .then(data => obj = data)
       .then(() => {
 
-        console.log("fetch call :", obj.results)
 
         setEntity(obj.results[0].entity);
         setName(obj.results[0].name);
@@ -209,11 +203,13 @@ const App = () => {
 
   }
 
+  //Toggle Handling
   const toggleMeasurementView = () => {
     console.log(isOpen)
     setIsOpen(!isOpen);
   }
 
+  //JSX Rendering
   return (
     <div>
       <div className="sidebarStyle">
@@ -257,7 +253,6 @@ const App = () => {
         <Tooltip />
         </LineChart>
         <b>Location Measurements - Barchart (PPM per day)</b>
-
         <BarChart
           width={1500}
           height={1600}
