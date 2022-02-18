@@ -5,16 +5,13 @@ import mapboxgl from 'mapbox-gl';
 import airquality from './air-quality.png';
 import 'reactjs-popup/dist/index.css';
 import Popup from './components/popups';
-import { LineChart, Line } from 'recharts';
+import {  LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Legend, Bar} from 'recharts';
 
 
 const API_KEY = process.env.REACT_APP_MAPBOX_API_KEY
 mapboxgl.accessToken = API_KEY
 
 const App = () => {
-
-  // ).setHTML('<h3>Location Type: ' + id.entity + '</h3>' + '<h4>Name: ' + id.name + '</h4>' + '</h3>' + '<h4>Source: ' + id.sources[0].id + '</h4>' + '</h3>' + '<h4>Count: ' + id.parameters[0].count + ' ' + id.parameters[0].unit + '</h4>' + '</h3>' + '<h4>Display Name: ' + id.parameters[0].displayName + '</h4>')
-
 
   const [entity, setEntity] = useState("")
   const [name, setName] = useState("")
@@ -24,13 +21,10 @@ const App = () => {
   const mapContainerRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [newValue, setNewValue] = useState("")
-  const [locationId, setLocationId] = useState("")
   const [lng, setLng] = useState(-95.3);
   const [lat, setLat] = useState(29.7);
   const [zoom, setZoom] = useState(10);
-
-
-
+  const [measurementsState, setMeasurementsState] = useState([{}])
 
   // Initialize map when component mounts
   useEffect(() => { 
@@ -39,7 +33,6 @@ const App = () => {
     var locationType;
     var apiParameters = {};
     var locationColor
-    var coordinates
   
 
     const map = new mapboxgl.Map({
@@ -74,7 +67,6 @@ const App = () => {
           entity: locationType
         }
       }
-
 
 
       fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/locations?' + new URLSearchParams(apiParameters))
@@ -119,9 +111,6 @@ const App = () => {
 
             lngLats = []
 
-   
-
-
 
             //MARKER UNIQUE IDENTIFIER IS LONG AND LAT -> Therefore I need 
             markerDiv.addEventListener('mouseenter', () => marker.togglePopup());
@@ -130,8 +119,6 @@ const App = () => {
             markerDiv.addEventListener('click', () => getMeasurementsByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
 
             
-         
-
           })
         });
     } 
@@ -153,18 +140,16 @@ const App = () => {
 
     // Clean up on unmount
     return () => map.remove();
-  }, [newValue]); // eslint-disable-line react-hooks/exhaustive-deps
-
-
-
-
-
+  }, [newValue]); 
 
 
   const getMeasurementsByCoordinates = (coordinates) => {
 
+
     var apiParameters
     var obj
+    var measurements = []
+
 
     apiParameters = {
       coordinates: coordinates
@@ -176,13 +161,24 @@ const App = () => {
       .then(() => {
 
         console.log("MEASUREMENT PRINTING:", obj.results)
+
+        obj.results.map((i) =>{
+
+
+
+          measurements.unshift({name: i.date.utc.slice(0,10), value: i.value})
+        })
+
+        console.log(measurements)
+
+        setMeasurementsState(measurements);
+
+
         setIsOpen(!isOpen);
 
         
       })
   }
-
-
 
 
   const getLocationByCoordinates = (coordinates) => {
@@ -191,7 +187,6 @@ const App = () => {
     var obj;
 
     console.log("Coordinates,", coordinates)
-
 
     apiParameters = {
       coordinates: coordinates,
@@ -204,14 +199,11 @@ const App = () => {
 
         console.log("fetch call :", obj.results)
 
-
-        setLocationId(obj.results[0].locationId);
         setEntity(obj.results[0].entity);
         setName(obj.results[0].name);
         setSource(obj.results[0].sources[0].id);
         setCount(obj.results[0].parameters[0].count + ' ' + obj.results[0].parameters[0].unit);
         setDisplayName(obj.results[0].parameters[0].displayName);
-
         
       })
 
@@ -221,7 +213,6 @@ const App = () => {
     console.log(isOpen)
     setIsOpen(!isOpen);
   }
-  
 
   return (
     <div>
@@ -233,7 +224,6 @@ const App = () => {
           Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
         </div>
       </div>
-      <div className="map-container" ref={mapContainerRef} />
       <div className="dropdown">
         <Dropdown
           placeholder="All Locations"
@@ -245,6 +235,7 @@ const App = () => {
           onOpen={() => console.log('open!')}
         />
       </div>
+      <div className="map-container" ref={mapContainerRef} />
       <div>
     {isOpen && <Popup
       content={<>
@@ -255,7 +246,36 @@ const App = () => {
         <p>Source: {source}</p>
         <p>Count: {count}</p>
         <p>Display Name: {displayName}</p>
-        <b>Location Measurements</b>
+        <b>Location Measurements - TimeSeries (PPM over time)</b>
+        <LineChart width={1500} height={600} data={measurementsState} margin={{ top: 5, right: 20, bottom: 20, left: 0 }}>
+          <Line type="monotone" dataKey="value" stroke="#8884d8" />
+          <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
+          <XAxis dataKey="name"
+          />
+          <YAxis dataeky="value"
+          />
+        <Tooltip />
+        </LineChart>
+        <b>Location Measurements - Barchart (PPM per day)</b>
+
+        <BarChart
+          width={1500}
+          height={1600}
+          data={measurementsState}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="value" fill="#8884d8" />
+        </BarChart>
       </>}
       handleClose={toggleMeasurementView}
     />}
@@ -268,4 +288,5 @@ export default App;
 
 
 
-// Consider situations where you want to update a component’s data (i.e., its state variables) to trigger a render in order to update the UI. You could also have situations where you want the same behavior with one exception: you do not want to trigger a render cycle because this could lead to bugs, awkward user experience (e.g., flickers), or performance problems.
+
+

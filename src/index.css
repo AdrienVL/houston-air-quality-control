@@ -31,7 +31,7 @@ hr.rounded {
 }
 
 .map-container {
-  margin-top: 5%;
+  margin-top: 1%;
   height: 800px;
 }
 
@@ -47,6 +47,7 @@ hr.rounded {
 
 .dropdown {
   position:relative;
+  width: 25%
 }
 
 /* Popup style */
