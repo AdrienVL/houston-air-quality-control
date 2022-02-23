@@ -28,7 +28,9 @@ const App = () => {
   const [zoom, setZoom] = useState(10);
   const [measurementsState, setMeasurementsState] = useState([{}])
 
-  // Initialize map when component mounts
+  //const setLocation (locationID)
+
+  // Initialize map when component mounts 
   useEffect(() => { 
 
     var obj;
@@ -114,8 +116,6 @@ const App = () => {
 
             const markerDiv = marker.getElement();
 
-
-
            //Marker Event Listeners - Hovering for popups
             markerDiv.addEventListener('mouseenter', () => marker.togglePopup());
             markerDiv.addEventListener('mouseleave', () => marker.togglePopup());
@@ -123,15 +123,14 @@ const App = () => {
             markerDiv.addEventListener('click', () => getLocationByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
             markerDiv.addEventListener('click', () => getMeasurementsByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
 
+
             //reset - for mapping
             lngLats = []
-
-
             
           })
         });
     } 
-  
+
     getLocationsList(newValue)
 
     // Add navigation control (the +/- zoom buttons)
