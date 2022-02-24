@@ -1,7 +1,7 @@
 import React from "react";
 import airquality from '../components/air-quality.png'
 
- 
+//Header Function
 const Header = props => {
   return (
     <div className="sidebarStyle">
