@@ -2,17 +2,17 @@ import React, { useRef, useEffect, useState } from 'react';
 import {Dropdown } from 'react-dropdown-now'
 import 'react-dropdown-now/style.css';
 import mapboxgl from 'mapbox-gl';
-import airquality from './air-quality.png';
 import 'reactjs-popup/dist/index.css';
 import Popup from './components/popups';
-import {  LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Legend, Bar} from 'recharts';
+import Header from './components/header'
+import {  LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Legend, Bar } from 'recharts';
 
 
-mapboxgl.accessToken = "pk.eyJ1IjoiYWRyaWVuLWxoZW1hbm4iLCJhIjoiY2t6b213ZTJwMnA0dzJ1cXJyNG0yMHdlbCJ9.kmta6IkpT9B7-4JWX6Lleg"
+const accessToken = process.env.REACT_APP_API_KEY
+mapboxgl.accessToken = accessToken
 
 const App = () => {
 
-  
   const mapContainerRef = useRef(null);
 
   //State Definitions
@@ -21,23 +21,22 @@ const App = () => {
   const [source, setSource] = useState("")
   const [count, setCount] = useState("")
   const [displayName, setDisplayName] = useState("")
-  const [isOpen, setIsOpen] = useState(false);
-  const [newValue, setNewValue] = useState("")
+  const [popupIsOpen, setpopupIsOpen] = useState(false);
+  const [locationType, setlocationType] = useState("")
   const [lng, setLng] = useState(-95.3);
   const [lat, setLat] = useState(29.7);
   const [zoom, setZoom] = useState(10);
   const [measurementsState, setMeasurementsState] = useState([{}])
+  const [limit, setLimit] = useState(10)
 
-  //const setLocation (locationID)
+  //const setLocationID (locationID)
 
-  // Initialize map when component mounts 
   useEffect(() => { 
 
-    var obj;
-    var locationType;
     var apiParameters = {};
-    var locationColor
+    var markerColor
   
+    // Initialize map when component mounts 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/streets-v11',
@@ -45,29 +44,25 @@ const App = () => {
       zoom: zoom,
     });
 
-
     var lngLats = [];
 
     //When Location type gets changes, getLocationList gets called
-    const getLocationsList = (value) => {
+    const getLocationsList = (location) => {
 
       //handling location type
-      if (value.value === 'All Locations' || typeof value.value === 'undefined') {
+      if (location.value === 'All Locations' || typeof location.value === 'undefined') {
         apiParameters = {
         country_id: 'US',
         city: 'Houston',
-        limit: '200'}
+        limit: [limit]}
   
       } else{
-  
-        locationType = value.value
-        console.log("Location Type: ", locationType)
   
         apiParameters = {
           country_id: 'US',
           city: 'Houston',
           limit: '200',
-          entity: locationType
+          entity: location.value
         }
       }
 
@@ -75,12 +70,10 @@ const App = () => {
       //Getting all locations for set parameters
       fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/locations?' + new URLSearchParams(apiParameters))
         .then(res => res.json())
-        .then(data => obj = data)
-        .then(() => {
+        .then(data => {
           
-
           //Iterate over each location
-          obj.results.map((id) => {
+          data.results.map((id) => {
 
             //Handling differences in JSON obj coordinate field definitions
             if (typeof id.coordinates == 'undefined'){
@@ -93,16 +86,15 @@ const App = () => {
 
             //Assign marker color by location type
             if (id.entity === 'government'){
-              locationColor = 'red'
+              markerColor = 'red'
             } else if (id.entity === 'research'){
-              locationColor = 'green'
+              markerColor = 'green'
             } else{
-              locationColor = 'blue'
+              markerColor = 'blue'
             }
 
             //Define Marker on map for each location
-            let marker = new mapboxgl.Marker({color: locationColor}).setLngLat(lngLats).addTo(map)  
-
+            let marker = new mapboxgl.Marker({color: markerColor}).setLngLat(lngLats).addTo(map)  
 
             //Associate location data to marker popup
             var popup = new mapboxgl.Popup(
@@ -131,7 +123,7 @@ const App = () => {
         });
     } 
 
-    getLocationsList(newValue)
+    getLocationsList(locationType)
 
     // Add navigation control (the +/- zoom buttons)
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -145,16 +137,13 @@ const App = () => {
 
     });
 
-
     // Clean up on unmount
     return () => map.remove();
-  }, [newValue]); 
-
+  }, [locationType, limit]); 
 
   const getMeasurementsByCoordinates = (coordinates) => {
 
     var apiParameters
-    var obj
     var measurements = []
 
     apiParameters = {
@@ -165,14 +154,13 @@ const App = () => {
     //Fetch measurements from same air quality source coordinates
     fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/measurements?' + new URLSearchParams(apiParameters))
       .then(res => res.json())
-      .then(data => obj = data)
-      .then(() => {
+      .then(data =>  {
 
-        obj.results.map((i) =>{measurements.unshift({name: i.date.utc.slice(0,10), value: i.value})})
+        data.results.map((i) =>{measurements.unshift({name: i.date.utc.slice(0,10), value: i.value})})
         //Set measurements for graphs
         setMeasurementsState(measurements);
         //Handles popup
-         setIsOpen(!isOpen);})
+         setpopupIsOpen(!popupIsOpen);})
   }
 
 
@@ -180,7 +168,6 @@ const App = () => {
   const getLocationByCoordinates = (coordinates) => {
 
     var apiParameters;
-    var obj;
 
     apiParameters = {
       coordinates: coordinates,
@@ -188,15 +175,14 @@ const App = () => {
 
       fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/locations?' + new URLSearchParams(apiParameters))
       .then(res => res.json())
-      .then(data => obj = data)
-      .then(() => {
+      .then(data => {
 
 
-        setEntity(obj.results[0].entity);
-        setName(obj.results[0].name);
-        setSource(obj.results[0].sources[0].id);
-        setCount(obj.results[0].parameters[0].count + ' ' + obj.results[0].parameters[0].unit);
-        setDisplayName(obj.results[0].parameters[0].displayName);
+        setEntity(data.results[0].entity);
+        setName(data.results[0].name);
+        setSource(data.results[0].sources[0].id);
+        setCount(data.results[0].parameters[0].count + ' ' + data.results[0].parameters[0].unit);
+        setDisplayName(data.results[0].parameters[0].displayName);
         
       })
 
@@ -204,35 +190,39 @@ const App = () => {
 
   //Toggle Handling
   const toggleMeasurementView = () => {
-    console.log(isOpen)
-    setIsOpen(!isOpen);
+    console.log(popupIsOpen)
+    setpopupIsOpen(!popupIsOpen);
   }
+
+  const handleChange = (event) => {
+    setLimit(event.target.value);
+  }
+
 
   //JSX Rendering
   return (
     <div>
-      <div className="sidebarStyle">
-        <img className="air-quality-image" src={airquality} alt="" />
-        <h1 className="title">Houston Air Quality Control</h1>
-        <hr className="rounded"></hr>
-        <div>
-          Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
-        </div>
+      <Header 
+      action={
+            <input onChange={handleChange} placeholder="Set Limit..."/>
+      }/>
+      <div>
+        Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
       </div>
       <div className="dropdown">
         <Dropdown
           placeholder="All Locations"
           options={["All Locations", 'government', 'research', 'community']}
-          value="Filter by location type"
-          onChange={(value) => console.log('change!', value)}
-          onSelect={(value) => setNewValue(value)}
+          locationType="Filter by location type"
+          onChange={(locationType) => console.log('change!', locationType)}
+          onSelect={(location) => setlocationType(location)}
           onClose={(closedBySelection) => console.log('closedBySelection?:', closedBySelection)}
           onOpen={() => console.log('open!')}
         />
       </div>
       <div className="map-container" ref={mapContainerRef} />
       <div>
-    {isOpen && <Popup
+    {popupIsOpen && <Popup
       content={<>
         <h1>Air Quality Measurements</h1>
         <b>Location Summary</b>
