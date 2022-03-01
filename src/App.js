@@ -3,8 +3,8 @@ import {Dropdown } from 'react-dropdown-now'
 import 'react-dropdown-now/style.css';
 import mapboxgl from 'mapbox-gl';
 import 'reactjs-popup/dist/index.css';
-import Popup from './components/popups';
-import Header from './components/header'
+import Popup from './components/Popup';
+import Header from './components/Header'
 import {  LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Legend, Bar } from 'recharts';
 
 
@@ -13,13 +13,16 @@ mapboxgl.accessToken = accessToken
 
 const App = () => {
 
-  const mapContainerRef = useRef(null);
+  const mapContainer = useRef(null);
+  const map = useRef(null);
+
 
   //State Definitions
   const [entity, setEntity] = useState("")
   const [name, setName] = useState("")
   const [source, setSource] = useState("")
   const [count, setCount] = useState("")
+  const [markers, setMarkers] = useState([])
   const [displayName, setDisplayName] = useState("")
   const [popupIsOpen, setpopupIsOpen] = useState(false);
   const [locationType, setlocationType] = useState("")
@@ -27,28 +30,74 @@ const App = () => {
   const [lat, setLat] = useState(29.7);
   const [zoom, setZoom] = useState(10);
   const [measurementsState, setMeasurementsState] = useState([{}])
-  const [limit, setLimit] = useState(10)
+  const [limit, setLimit] = useState(100)
 
-  //const setLocationID (locationID)
+
+  //Separate Components for Map, Marker (has its own useeffect). Create parent components (ex., API Parameters, map, marker) - Pass through Props
+
+  //To-DO: 
+  //1. Effect - Re-rendering map unnecessarily
+  //2. const setLocationID (locationID)
+
+  // useEffect(() => {
+
+  //Map is being defined in return statement -> Marker object
+
+
+
+  useEffect(() => {
+    if (map.current) return; // initialize map only once
+    map.current = new mapboxgl.Map({
+    container: mapContainer.current,
+    style: 'mapbox://styles/mapbox/streets-v11',
+    center: [lng, lat],
+    zoom: zoom
+    });
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+  });
+
+  useEffect(() => {
+
+    if (!map.current) return; 
+    map.current.on('move', () => {
+      console.log("moving")
+      setLng(map.current.getCenter().lng.toFixed(4));
+      setLat(map.current.getCenter().lat.toFixed(4));
+      setZoom(map.current.getZoom().toFixed(2));
+
+    });
+  });
+
+  useEffect(() => {
+
+    console.log(markers)
+    if (markers !== []) {
+      for (var i = markers.length - 1; i >= 0; i--) {
+        markers[i].remove();
+
+      }
+    }
+  }, [locationType]);
+
 
   useEffect(() => { 
 
-    var apiParameters = {};
-    var markerColor
-  
-    // Initialize map when component mounts 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v11',
-      center: [lng, lat],
-      zoom: zoom,
-    });
 
+
+    // if (!map.current) return; // wait for map to initialize
+
+    var apiParameters = {};
+    var markerColor;
     var lngLats = [];
+
+
 
     //When Location type gets changes, getLocationList gets called
     const getLocationsList = (location) => {
 
+
+      
       //handling location type
       if (location.value === 'All Locations' || typeof location.value === 'undefined') {
         apiParameters = {
@@ -61,7 +110,7 @@ const App = () => {
         apiParameters = {
           country_id: 'US',
           city: 'Houston',
-          limit: '200',
+          limit: [limit],
           entity: location.value
         }
       }
@@ -74,6 +123,8 @@ const App = () => {
           
           //Iterate over each location
           data.results.map((id) => {
+
+
 
             //Handling differences in JSON obj coordinate field definitions
             if (typeof id.coordinates == 'undefined'){
@@ -94,7 +145,12 @@ const App = () => {
             }
 
             //Define Marker on map for each location
-            let marker = new mapboxgl.Marker({color: markerColor}).setLngLat(lngLats).addTo(map)  
+            let marker = new mapboxgl.Marker({color: markerColor}).setLngLat(lngLats).addTo(map.current) 
+            markers.push(marker);
+
+
+
+
 
             //Associate location data to marker popup
             var popup = new mapboxgl.Popup(
@@ -115,30 +171,26 @@ const App = () => {
             markerDiv.addEventListener('click', () => getLocationByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
             markerDiv.addEventListener('click', () => getMeasurementsByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
 
-
             //reset - for mapping
             lngLats = []
-            
+
+
+
+
+      
           })
+
+
+
+
         });
     } 
 
     getLocationsList(locationType)
 
-    // Add navigation control (the +/- zoom buttons)
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    map.on('move', () => {
-
-      console.log("moving")
-      setLng(map.getCenter().lng.toFixed(4));
-      setLat(map.getCenter().lat.toFixed(4));
-      setZoom(map.getZoom().toFixed(2));
-
-    });
 
     // Clean up on unmount
-    return () => map.remove();
+
   }, [locationType, limit]); 
 
   const getMeasurementsByCoordinates = (coordinates) => {
@@ -202,10 +254,7 @@ const App = () => {
   //JSX Rendering
   return (
     <div>
-      <Header 
-      action={
-            <input onChange={handleChange} placeholder="Set Limit..."/>
-      }/>
+      <Header/>
       <div>
         Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
       </div>
@@ -220,8 +269,9 @@ const App = () => {
           onOpen={() => console.log('open!')}
         />
       </div>
-      <div className="map-container" ref={mapContainerRef} />
-      <div>
+      <input type="text" onChange={handleChange} placeholder="Set Marker Limit..."/>
+      <div className="map-container" ref={mapContainer} />
+    <div>
     {popupIsOpen && <Popup
       content={<>
         <h1>Air Quality Measurements</h1>

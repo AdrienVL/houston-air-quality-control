@@ -1,7 +1,7 @@
 import React from "react";
-import './header.css';
+import './popup.css';
 
- 
+//Functional Components
 const Popup = props => {
   return (
     <div className="popup-box">

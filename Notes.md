@@ -33,6 +33,8 @@ ReactDOM.render(<Garage />, document.getElementById('root'));
 // Integrating with third-party DOM libraries.
 // Note: You should avoid using refs for anything that can be done declaratively.
 
+Let’s say you want to change the value of an <input> element, but without using props or re-rendering the whole component.
+
 
 // ==========REFS VS STATE==============//
 // Commonalities to both useState() and useRef():
@@ -107,3 +109,21 @@ How Virtual DOM actually make the things faster: When anything new is added to t
 
 How Virtual DOM helps React: In react, everything is treated as a component be it a functional component or class component. A component can contain a state. Each time we change something in our JSX file or let’s put it in simple terms, whenever the state of any component is changed react updates it’s Virtual DOM tree. Though it may sound that it is ineffective but the cost is not much significant as updating the virtual DOM doesn’t take much time. React maintains two Virtual DOM at each time, one contains the updated Virtual DOM and one which is just the pre-update version of this updated Virtual DOM. Now it compares the pre-update version with the updated Virtual DOM and figures out what exactly has changed in the DOM like which components have been changed. This process of comparing the current Virtual DOM tree with the previous one is known as ‘diffing’. Once React finds out what exactly has changed then it updated those objects only, on real DOM. React uses something called as batch updates to update the real DOM. It just mean that the changes to the real DOM are sent in batches instead of sending any update for a single change in the state of a component. We have seen that the re-rendering of the UI is the most expensive part and React manages to do this most efficiently by ensuring that the Real DOM receives batch updates to re-render the UI. This entire proces of transforming changes to the real DOM is called Reconciliation
 
+=======================Functional Components================================
+
+
+Functional Components: Functional components are simply javascript functions. We can create a functional component in React by writing a javascript function. These functions may or may not receive data as parameters, we will discuss this later in the tutorial. Below example shows a valid functional component in React: 
+ 
+const Democomponent=()=>
+{
+    return <h1>Welcome Message!</h1>;
+}
+
+Class Components: The class components are a little more complex than the functional components. The functional components are not aware of the other components in your program whereas the class components can work with each other. We can pass data from one class component to other class components. We can use JavaScript ES6 classes to create class-based components in React. Below example shows a valid class-based component in React: 
+ 
+class Democomponent extends React.Component
+{
+    render(){
+          return <h1>Welcome Message!</h1>;
+    }
+}
