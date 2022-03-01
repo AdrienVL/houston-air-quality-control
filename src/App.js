@@ -32,6 +32,8 @@ const App = () => {
   const [measurementsState, setMeasurementsState] = useState([{}])
   const [limit, setLimit] = useState(100)
 
+  
+
 
   //Separate Components for Map, Marker (has its own useeffect). Create parent components (ex., API Parameters, map, marker) - Pass through Props
 
@@ -57,7 +59,8 @@ const App = () => {
 
   });
 
-  useEffect(() => {
+
+  useEffect(() => { 
 
     if (!map.current) return; 
     map.current.on('move', () => {
@@ -67,9 +70,6 @@ const App = () => {
       setZoom(map.current.getZoom().toFixed(2));
 
     });
-  });
-
-  useEffect(() => {
 
     console.log(markers)
     if (markers !== []) {
@@ -78,120 +78,92 @@ const App = () => {
 
       }
     }
-  }, [locationType]);
-
-
-  useEffect(() => { 
-
-
-
-    // if (!map.current) return; // wait for map to initialize
-
-    var apiParameters = {};
-    var markerColor;
-    var lngLats = [];
-
-
-
-    //When Location type gets changes, getLocationList gets called
-    const getLocationsList = (location) => {
-
-
-      
-      //handling location type
-      if (location.value === 'All Locations' || typeof location.value === 'undefined') {
-        apiParameters = {
-        country_id: 'US',
-        city: 'Houston',
-        limit: [limit]}
-  
-      } else{
-  
-        apiParameters = {
-          country_id: 'US',
-          city: 'Houston',
-          limit: [limit],
-          entity: location.value
-        }
-      }
-
-
-      //Getting all locations for set parameters
-      fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/locations?' + new URLSearchParams(apiParameters))
-        .then(res => res.json())
-        .then(data => {
-          
-          //Iterate over each location
-          data.results.map((id) => {
-
-
-
-            //Handling differences in JSON obj coordinate field definitions
-            if (typeof id.coordinates == 'undefined'){
-              lngLats.push(id.bounds[0]) //longitdue
-              lngLats.push(id.bounds[1]) //latitude
-            }else{
-              lngLats.push(id.coordinates.longitude)
-              lngLats.push(id.coordinates.latitude)
-            }
-
-            //Assign marker color by location type
-            if (id.entity === 'government'){
-              markerColor = 'red'
-            } else if (id.entity === 'research'){
-              markerColor = 'green'
-            } else{
-              markerColor = 'blue'
-            }
-
-            //Define Marker on map for each location
-            let marker = new mapboxgl.Marker({color: markerColor}).setLngLat(lngLats).addTo(map.current) 
-            markers.push(marker);
-
-
-
-
-
-            //Associate location data to marker popup
-            var popup = new mapboxgl.Popup(
-              {
-              closeButton: false,
-            closeonClick: false}
-            ).setHTML('<h3>Location Type: ' + id.entity + '</h3>' + '<h4>Name: ' + id.name + '</h4>' + '</h3>' + '<h4>Source: ' + id.sources[0].id + '</h4>' + '</h3>' + '<h4>Count: ' + id.parameters[0].count + ' ' + id.parameters[0].unit + '</h4>' + '</h3>' + '<h4>Display Name: ' + id.parameters[0].displayName + '</h4>')
-
-            // add popup to marker
-            marker.setPopup(popup);
-
-            const markerDiv = marker.getElement();
-
-           //Marker Event Listeners - Hovering for popups
-            markerDiv.addEventListener('mouseenter', () => marker.togglePopup());
-            markerDiv.addEventListener('mouseleave', () => marker.togglePopup());
-            //Click on markers ]fetches location and measurements (using coordinates as unique identifier)
-            markerDiv.addEventListener('click', () => getLocationByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
-            markerDiv.addEventListener('click', () => getMeasurementsByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
-
-            //reset - for mapping
-            lngLats = []
-
-
-
-
-      
-          })
-
-
-
-
-        });
-    } 
-
     getLocationsList(locationType)
 
-
-    // Clean up on unmount
-
   }, [locationType, limit]); 
+
+      //When Location type gets changes, getLocationList gets called
+      const getLocationsList = (location) => {
+
+        var apiParameters = {};
+        var markerColor;
+        var lngLats = [];
+
+        //handling location type
+        if (location.value === 'All Locations' || typeof location.value === 'undefined') {
+          apiParameters = {
+          country_id: 'US',
+          city: 'Houston',
+          limit: [limit]}
+    
+        } else{
+    
+          apiParameters = {
+            country_id: 'US',
+            city: 'Houston',
+            limit: [limit],
+            entity: location.value
+          }
+        }
+  
+        //Getting all locations for set parameters
+        fetch('https://u50g7n0cbj.execute-api.us-east-1.amazonaws.com/v2/locations?' + new URLSearchParams(apiParameters))
+          .then(res => res.json())
+          .then(data => {
+            
+            //Iterate over each location
+            data.results.map((id) => {
+  
+              //Handling differences in JSON obj coordinate field definitions
+              if (typeof id.coordinates == 'undefined'){
+                lngLats.push(id.bounds[0]) //longitdue
+                lngLats.push(id.bounds[1]) //latitude
+              }else{
+                lngLats.push(id.coordinates.longitude)
+                lngLats.push(id.coordinates.latitude)
+              }
+  
+              //Assign marker color by location type
+              if (id.entity === 'government'){
+                markerColor = 'red'
+              } else if (id.entity === 'research'){
+                markerColor = 'green'
+              } else{
+                markerColor = 'blue'
+              }
+  
+              //Define Marker on map for each location
+              let marker = new mapboxgl.Marker({color: markerColor}).setLngLat(lngLats).addTo(map.current) 
+              markers.push(marker);
+  
+              //Associate location data to marker popup
+              var popup = new mapboxgl.Popup(
+                {
+                closeButton: false,
+              closeonClick: false}
+              ).setHTML('<h3>Location Type: ' + id.entity + '</h3>' + '<h4>Name: ' + id.name + '</h4>' + '</h3>' + '<h4>Source: ' + id.sources[0].id + '</h4>' + '</h3>' + '<h4>Count: ' + id.parameters[0].count + ' ' + id.parameters[0].unit + '</h4>' + '</h3>' + '<h4>Display Name: ' + id.parameters[0].displayName + '</h4>')
+  
+              // add popup to marker
+              marker.setPopup(popup);
+  
+              const markerDiv = marker.getElement();
+  
+             //Marker Event Listeners - Hovering for popups
+              markerDiv.addEventListener('mouseenter', () => marker.togglePopup());
+              markerDiv.addEventListener('mouseleave', () => marker.togglePopup());
+              //Click on markers ]fetches location and measurements (using coordinates as unique identifier)
+              markerDiv.addEventListener('click', () => getLocationByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
+              markerDiv.addEventListener('click', () => getMeasurementsByCoordinates(marker.getLngLat().lat + "," + marker.getLngLat().lng))
+  
+              //reset - for mapping
+              lngLats = []
+  
+        
+            })
+  
+  
+          });
+      } 
 
   const getMeasurementsByCoordinates = (coordinates) => {
 
@@ -249,6 +221,8 @@ const App = () => {
   const handleChange = (event) => {
     setLimit(event.target.value);
   }
+
+
 
 
   //JSX Rendering
