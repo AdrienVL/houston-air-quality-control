@@ -2,7 +2,7 @@ import React from "react";
 import './popup.css';
 
 //Functional Components
-const Popup = props => {
+const MeasurementView = props => {
   return (
     <div className="popup-box">
       <div className="box">
@@ -13,4 +13,4 @@ const Popup = props => {
   );
 };
  
-export default Popup;
+export default MeasurementView;

@@ -1,6 +1,14 @@
+********************** To Improve ******************
+
+Mapbox Layer Marker Implementation (save Marker coordinates in GeoJson, then load to map) rather than interacting with Marker HTML - Marker and Popup components (Query by ID, rather than coordinates)
+Extra API call - locations
+
+
 //=============PROPS======================//
 
 Props are also how you pass data from one component to another, as parameters.
+
+Props are inputs for both types of components. One of the main tasks of props is to pass information from component to component. It’s especially necessary if you want to build a dynamic user interface. However, there is one important rule that you shouldn’t forget: props are read-only. That means that all React components shouldn’t change their inputs and the same props must return the same result. Components that respect their props are called “pure”. That rule works both for class and function components. 
 
 
 
@@ -24,6 +32,19 @@ ReactDOM.render(<Garage />, document.getElementById('root'));
 //============REFS=============//
 
 
+************************************* Refs and MAPBOX
+
+Refs are a function provided by React to access the DOM element and the React element that you might have created on your own.
+
+The Mapbox map is initialized within a React Effect hook
+
+The container option tells Mapbox GL JS to render the map inside a specific DOM element. Here, the app expects to receive a mapContainer useRef or ref.
+
+If you are using hooks, you also created a map useRef to store the initialize the map. The ref will prevent the map from reloading when the user interacts with the map.
+
+*************************************
+
+
 //Avoid Refs
 
 //Creating refs in ReactJS is very simple. Refs are generally used for the following purposes:
@@ -37,6 +58,13 @@ Let’s say you want to change the value of an <input> element, but without usin
 
 
 // ==========REFS VS STATE==============//
+
+
+*********************************************
+The state is an instance of React Component Class can be defined as an object of a set of observable properties that control the behavior of the component. In other words, the State of a component is an object that holds some information that may change over the lifetime of the component. 
+*********************************************
+
+
 // Commonalities to both useState() and useRef():
 
 // Available in functional components only
@@ -127,3 +155,66 @@ class Democomponent extends React.Component
           return <h1>Welcome Message!</h1>;
     }
 }
+
+=================================Func vs class components==========================
+
+Differentiating Functional vs Class components
+1.State and lifecycle
+Well, the standard answer to the question about the difference between functional and class components was that class components provide developers with such features as setState() and lifecycle methods componentDidMount(), componentWillUnmoun(), etc., while functional components don’t. That was true because functional components are plain JavaScript functions that accept props and return React elements, while class components are JavaScript classes that extend React.Component which has a render method. Both state and lifecycle methods come from React.Component, so they were available only for class components. The widespread advice was something like that: “Go with functional if your component doesn’t do much more than take in some props and render”. You had no options on how to build complex UI and class components dominated in React development for a while.
+
+However, that has changed with the introduction of Hooks. To replace setState method to work with the state in class components React offers useState Hook.
+To work with components lifecycle classes have such methods like componentDidMount, componentWillUnmount, componentWillUpdate, componentDidUpdate, shouldComponentUpdate. Functional components have got a tool to work with the same methods using only one Hook useEffect. You can think of useEffect Hook as componentDidMount, componentDidUpdate, and componentWillUnmount combined. 
+
+Standard class methods work well but do look not very elegant. Functional components offer an elegant and simple decision: instead of using multiple lifecycle methods, we can replace them with one Hook useEffect. What React developers write about Hooks:
+
+
+Handling state.
+To handle state functional components in React offer useState()Hook. We assign the initial state of count equal to 0 and set the method setCount() that increases it by one every time we click a button. The component returns the number of times we clicked the button and the button itself. The initial state is used only during the first render. The type of argument can be a number, string, object, or null. To learn more about that useState() Hook see the official documentation.  
+
+const FunctionalComponent = () => {
+const [count, setCount] = React.useState(0);
+return (
+<div>
+<p>count: {count}</p>
+<button onClick={() => setCount(count + 1)}>Click</button>
+</div>
+);
+};
+
+Class components work a bit differently. They use setState() function, require a constructor, and this keyword. 
+
+class ClassComponent extends React.Component {
+constructor(props) {
+super(props);
+this.state = {
+count: 0
+};
+}
+
+render() {
+return (
+<div>
+<p>count: {this.state.count} times</p>
+<button onClick={() => this.setState({ count: this.state.count + 1 })}>
+Click
+</button>
+</div>
+);
+}
+}
+
+
+
+
+The underlying logic is similar to the logic in functional components. In constructor() we declare a state object, state key “count” and the initial value equal to 0. In render() method we use setState() function to update the value of our count using this.state.count and the app renders the number of times the button was clicked and displays the button itself. The result is the same, but the same functionality requires more lines of code for class components. However, it doesn’t mean that the code written with class components will be more cumbersome than the code made with functional components, but the code definitely will be bigger.
+
+
+The useEffect Hook possesses two parameters: the first is the “effect” itself that is going to be called once after every render of the component. The second parameter is an array of observable state or states (or so-called a dependency list). useEffect Hook only runs if one of these states changes. Leaving the second parameter empty useEffect Hooks runs once after render.
+
+=================================Markers vs. Layers ===================================================
+
+
+Markers vs. Layers Summary
+Markers are more appropriate for static data or small data points that you can easily manage manually—for example, the user's current location. Markers are easier to style with your own svgs or images via CSS, but they're harder to manage in large numbers and more difficult to interact with.
+
+Larger, dynamic data sets are more manageable with layers. They're a bit more difficult to style (in my opinion), but much easier to interact with. You can add event listeners to the map that target specific layers by their unique ids and easily access and act upon the features in those layers, without having to manually manage the data.
